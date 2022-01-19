@@ -19,6 +19,7 @@ public strictfp class RobotPlayer {
     static int turnCount = 0;
 
     static MapLocation startLocation;
+    static MapLocation birthLocation;
 
 
     /**
@@ -57,6 +58,7 @@ public strictfp class RobotPlayer {
         System.out.println("I'm a " + rc.getType() + " and I just got created! I have health " + rc.getHealth());
 
         startLocation = rc.getLocation();
+        birthLocation = rc.getLocation();
         // You can also use indicators to save debug notes in replays.
         rc.setIndicatorString("Hello world!");
 
@@ -65,6 +67,7 @@ public strictfp class RobotPlayer {
             // loop. If we ever leave this loop and return from run(), the robot dies! At the end of the
             // loop, we call Clock.yield(), signifying that we've done everything we want to do.
 
+            Communication.reportAlive(rc);
             turnCount += 1;  // We have now been alive for one more turn!
             System.out.println("Age: " + turnCount + "; Location: " + rc.getLocation());
 
@@ -78,15 +81,15 @@ public strictfp class RobotPlayer {
                 int visionRadiusSquared = rc.getType().visionRadiusSquared;
                 RobotInfo[] nearbyEnemies = rc.senseNearbyRobots(visionRadiusSquared, rc.getTeam().opponent());
                 for (RobotInfo robotInfo : nearbyEnemies) {
-                    if (robotInfo.getType() == RobotType.ARCHON) {
+                    if (robotInfo.getType() == RobotType.ARCHON && rc.readSharedArray(PersonalConstants.INDEX_OF_ARCHON) == 0) {
                         MapLocation sensedArchonLocation = robotInfo.getLocation();
-                        rc.writeSharedArray(0, MapLocationUtils.mapLocationToInt(rc,sensedArchonLocation));
+                        rc.writeSharedArray(PersonalConstants.INDEX_OF_ARCHON, MapLocationUtils.mapLocationToInt(rc,sensedArchonLocation));
                     }
                 }
 
                 switch (rc.getType()) {
                     case ARCHON:
-                        runArchon(rc);
+                        ArchonStrategy.runArchon(rc,nearbyEnemies);
                         break;
                     case MINER:
                         MinerStrategy.runMiner(rc);
@@ -124,35 +127,4 @@ public strictfp class RobotPlayer {
         // Your code should never reach here (unless it's intentional)! Self-destruction imminent...
     }
 
-    /**
-     * Run a single turn for an Archon.
-     * This code is wrapped inside the infinite loop in run(), so it is called once per turn.
-     */
-    static void runArchon(RobotController rc) throws GameActionException {
-
-        // Pick a direction to build in.
-        Direction dir = directions[rng.nextInt(directions.length)];
-
-        if(rc.readSharedArray(0)!=0){
-            if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                rc.buildRobot(RobotType.SOLDIER, dir);
-            }
-        }
-        else{
-            if (rng.nextBoolean()) {
-                // Let's try to build a miner.
-                rc.setIndicatorString("Trying to build a miner");
-                if (rc.canBuildRobot(RobotType.MINER, dir)) {
-                    rc.buildRobot(RobotType.MINER, dir);
-                }
-            } else {
-                // Let's try to build a soldier.
-                rc.setIndicatorString("Trying to build a soldier");
-                if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                    rc.buildRobot(RobotType.SOLDIER, dir);
-                }
-            }
-        }
-
-    }
 }
