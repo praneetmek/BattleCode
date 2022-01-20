@@ -16,7 +16,7 @@ public class SoldierStrategy {
         if(rc.getHealth() == rc.getType().health){
             damaged = false;                        //checks whether soldier needs to be healed
         }
-        if(rc.getHealth()<15){
+        if(rc.getHealth()<25){
             damaged = true;
         }
 
@@ -33,12 +33,14 @@ public class SoldierStrategy {
                 }
             }
             if(archonLocation != 0){
+                rc.setIndicatorString("Attacking Archon at" + archonLocation );
                 attackArchon(rc, archonLocation, nearbyEnemies); //go to archon
                 hasActed = true;
             }
 
         }
         if(!hasActed){
+            rc.setIndicatorString("Exploring");
             PathingUtils.smartExplore(rc, RobotPlayer.startLocation);
         }
     }
@@ -58,13 +60,16 @@ public class SoldierStrategy {
                 rc.attack(archonMapLocation);
             }
             else{
-                if(!PathingUtils.moveTowards(rc, archonMapLocation)){
+                if(!PathingUtils.canMoveTowards(rc, archonMapLocation)){
                     for (RobotInfo enemy:nearbyEnemies){
                         if(rc.canAttack(enemy.getLocation())){
                             rc.setIndicatorString("can attack enemy");
                             rc.attack(enemy.getLocation());
                         }
                     }
+                }
+                else{
+                    PathingUtils.moveTowards(rc, archonMapLocation);
                 }
             }
         }

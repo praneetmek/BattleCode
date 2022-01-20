@@ -9,34 +9,26 @@ public class PathingUtils {
      * @param otherLocations
      * @return
      */
-    public static MapLocation getClosestLocation(MapLocation currentLocation, MapLocation[] otherLocations){
-        int closestLocationDistance = currentLocation.distanceSquaredTo(otherLocations[0]);
-        MapLocation bestLocation = otherLocations[0];
-        for (MapLocation otherLocation: otherLocations){
-            if (currentLocation.distanceSquaredTo(otherLocation) < closestLocationDistance){
-                closestLocationDistance = currentLocation.distanceSquaredTo(otherLocation);
-                bestLocation = otherLocation;
-            }
-        }
-        return bestLocation;
-    }
 
-    public static boolean moveTowards(RobotController rc, MapLocation loc) throws GameActionException {
-        MapLocation currLocation = rc.getLocation();
-        Direction dirToLoc = currLocation.directionTo(loc);
-        if(rc.canMove(dirToLoc)){
-            rc.move(dirToLoc);
-            return true;
-        }
-        else if(rc.canSenseRobotAtLocation(currLocation.add(dirToLoc)) && rc.senseRobotAtLocation(currLocation.add(dirToLoc)).getType() == RobotType.SOLDIER){
-            Direction dir = RobotPlayer.directions[RobotPlayer.rng.nextInt(RobotPlayer.directions.length)];
-            if(rc.canMove(dir)){
-                rc.move(dir);
-                return true;
-            }
-        }
-        return false;
-    }
+    private static Direction bugDirection = null;
+
+
+//    public static boolean moveTowards(RobotController rc, MapLocation loc) throws GameActionException {
+//        MapLocation currLocation = rc.getLocation();
+//        Direction dirToLoc = currLocation.directionTo(loc);
+//        if(rc.canMove(dirToLoc)){
+//            rc.move(dirToLoc);
+//            return true;
+//        }
+//        else if(rc.canSenseRobotAtLocation(currLocation.add(dirToLoc)) && rc.senseRobotAtLocation(currLocation.add(dirToLoc)).getType() == RobotType.SOLDIER){
+//            Direction dir = RobotPlayer.directions[RobotPlayer.rng.nextInt(RobotPlayer.directions.length)];
+//            if(rc.canMove(dir)){
+//                rc.move(dir);
+//                return true;
+//            }
+//        }
+//        return false;
+//    }
 
     public static void smartExplore(RobotController rc, MapLocation startLocation) throws GameActionException{
         boolean hasMoved = false;
@@ -53,4 +45,71 @@ public class PathingUtils {
             }
         }
     }
+
+    public static boolean canMoveTowards(RobotController rc, MapLocation target){
+        if (!rc.isMovementReady()) {
+            // If our cooldown is too high, then don't even bother!
+            // There is nothing we can do anyway.
+            return false;
+        }
+        MapLocation currentLocation = rc.getLocation();
+        // if (currentLocation == target) // this is BAD! see Lecture 2 for why.
+        if (currentLocation.equals(target)) {
+            // We're already at our goal! Nothing to do either.
+            return false;
+        }
+        return true;
+    }
+
+    public static void moveTowards(RobotController rc, MapLocation target) throws GameActionException {
+        if (!rc.isMovementReady()) {
+            // If our cooldown is too high, then don't even bother!
+            // There is nothing we can do anyway.
+            return ;
+        }
+
+        MapLocation currentLocation = rc.getLocation();
+        // if (currentLocation == target) // this is BAD! see Lecture 2 for why.
+        if (currentLocation.equals(target)) {
+            // We're already at our goal! Nothing to do either.
+            return;
+        }
+
+        Direction d = currentLocation.directionTo(target);
+        if (rc.canMove(d) && !isObstacle(rc, d)) {
+            // Easy case of Bug 0!
+            // No obstacle in the way, so let's just go straight for it!
+            rc.move(d);
+            bugDirection = null;
+        } else {
+            // Hard case of Bug 0 :<
+            // There is an obstacle in the way, so we're gonna have to go around it.
+            if (bugDirection == null) {
+                // If we don't know what we're trying to do
+                // make something up
+                // And, what better than to pick as the direction we want to go in
+                // the best direction towards the goal?
+                bugDirection = d;
+            }
+            // Now, try to actually go around the obstacle
+            // using bugDirection!
+            // Repeat 8 times to try all 8 possible directions.
+            for (int i = 0; i < 8; i++) {
+                if (rc.canMove(bugDirection) && !isObstacle(rc, bugDirection)) {
+                    rc.move(bugDirection);
+                    bugDirection = bugDirection.rotateLeft();
+                    break;
+                } else {
+                    bugDirection = bugDirection.rotateRight();
+                }
+            }
+        }
+    }
+
+    private static boolean isObstacle(RobotController rc, Direction d) throws GameActionException {
+        MapLocation adjacentLocation = rc.getLocation().add(d);
+        int rubbleOnLocation = rc.senseRubble(adjacentLocation);
+        return rubbleOnLocation > 75;
+    }
+
 }

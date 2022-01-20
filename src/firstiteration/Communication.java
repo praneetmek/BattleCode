@@ -55,4 +55,14 @@ class Communication {
             return 0;
         }
     }
+
+    static void signalDanger(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(PersonalConstants.INDEX_OF_DANGER,MapLocationUtils.mapLocationToInt(rc, rc.getLocation()));
+    }
+    static void unSignalDanger(RobotController rc) throws GameActionException {
+        rc.writeSharedArray(PersonalConstants.INDEX_OF_DANGER,0);
+    }
+    static int getDanger(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(PersonalConstants.INDEX_OF_DANGER);
+    }
 }
