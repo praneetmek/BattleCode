@@ -105,4 +105,11 @@ public class PathingUtils {
         return rubbleOnLocation > 75;
     }
 
+    public static void moveWithinCircle(RobotController rc, MapLocation loc, int radius) throws GameActionException {
+        Direction dir = RobotPlayer.directions[RobotPlayer.rng.nextInt(RobotPlayer.directions.length)];
+        if(rc.getLocation().add(dir).distanceSquaredTo(loc) < radius && rc.canMove(dir)){
+            rc.move(dir);
+        }
+    }
+
 }

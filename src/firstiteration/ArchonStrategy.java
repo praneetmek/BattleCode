@@ -13,11 +13,16 @@ public class ArchonStrategy {
 
         int numOfSoldiers = Communication.getAlive(rc, RobotType.SOLDIER);
         int numOfMiners = Communication.getAlive(rc, RobotType.MINER);
+        int numOfBuilders = Communication.getAlive(rc, RobotType.BUILDER);
 
         int visionRadiusSquared = rc.getType().visionRadiusSquared;
         RobotInfo[] nearbyAllies = rc.senseNearbyRobots(visionRadiusSquared, rc.getTeam());
 
         boolean canCreate = true;
+        s+="ID number" + rc.getRoundNum()%rc.getArchonCount() + "can build";
+        if(rc.getRoundNum()%rc.getArchonCount() != indexOfLocation){
+            canCreate = false;
+        }
 
         updateArchonLocation(rc);
         updateDangerStatus(rc, nearbyEnemies);
@@ -59,19 +64,35 @@ public class ArchonStrategy {
         }
         healNearbyRobots(rc, nearbyAllies);
         if(canCreate){
-            if (numOfMiners<2* numOfSoldiers && numOfMiners < rc.getMapWidth() * rc.getMapHeight() * 0.03) {
-                // Let's try to build a miner.
-                rc.setIndicatorString("Trying to build a miner");
+            if(rc.getRoundNum()<20){
                 if (rc.canBuildRobot(RobotType.MINER, dir)) {
                     rc.buildRobot(RobotType.MINER, dir);
                 }
-            } else {
-                // Let's try to build a soldier.
-                rc.setIndicatorString("Trying to build a soldier");
-                if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
-                    rc.buildRobot(RobotType.SOLDIER, dir);
+            }
+            else if(rc.getRoundNum()< 200){
+                for(Direction aDir: RobotPlayer.directions){
+                    if(rc.canBuildRobot(RobotType.BUILDER, aDir)){
+                        rc.buildRobot(RobotType.BUILDER, aDir);
+                    }
+                }
+
+            }
+            else{
+                if (numOfMiners<2* numOfSoldiers && numOfMiners < rc.getMapWidth() * rc.getMapHeight() * 0.03) {
+                    // Let's try to build a miner.
+                    rc.setIndicatorString("Trying to build a miner");
+                    if (rc.canBuildRobot(RobotType.MINER, dir)) {
+                        rc.buildRobot(RobotType.MINER, dir);
+                    }
+                } else {
+                    // Let's try to build a soldier.
+                    rc.setIndicatorString("Trying to build a soldier");
+                    if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
+                        rc.buildRobot(RobotType.SOLDIER, dir);
+                    }
                 }
             }
+
 
         }
         rc.setIndicatorString(s);
