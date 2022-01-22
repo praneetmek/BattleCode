@@ -39,7 +39,7 @@ public class MinerStrategy {
                     highestGold = goldAtSpot;
                 }
             }
-            PathingUtils.moveTowards(rc,maxGoldLocation);
+            PathingUtils.moveDirectlyTowards(rc,maxGoldLocation);
             hasActed = true;
 
 
@@ -56,7 +56,7 @@ public class MinerStrategy {
             }
             s+="Highest Lead Value: " + highestLead + " at "+ maxLeadLocation.toString();
             if(highestLead> 5) {
-                PathingUtils.moveTowards(rc, maxLeadLocation);
+                PathingUtils.moveDirectlyTowards(rc, maxLeadLocation);
                 hasActed = true;
             }
         }

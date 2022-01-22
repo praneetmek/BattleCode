@@ -85,6 +85,21 @@ public strictfp class RobotPlayer {
                         MapLocation sensedArchonLocation = robotInfo.getLocation();
                         rc.writeSharedArray(PersonalConstants.INDEX_OF_ARCHON, MapLocationUtils.mapLocationToInt(rc,sensedArchonLocation));
                     }
+                    if (robotInfo.getType() == RobotType.SOLDIER){
+                        if(!Communication.isFrontLine(rc)) {
+                            MapLocation sensedSoldierLocation = robotInfo.getLocation();
+                            Communication.setFrontLine(rc, sensedSoldierLocation);
+                        }
+                        else{
+                          MapLocation nearestArchonToSoldier = Communication.getNearestArchonLocation(rc, robotInfo.getLocation());
+                          int distanceToSoldier = nearestArchonToSoldier.distanceSquaredTo(robotInfo.getLocation());
+                          MapLocation nearestArchonToFrontLine = Communication.getNearestArchonLocation(rc, Communication.getFrontLine(rc));
+                          int distanceToFrontLine = nearestArchonToFrontLine.distanceSquaredTo(Communication.getFrontLine(rc));
+                          if(distanceToSoldier<distanceToFrontLine && distanceToSoldier<10){
+                              Communication.setFrontLine(rc, robotInfo.getLocation());
+                          }
+                        }
+                    }
                 }
 
                 switch (rc.getType()) {

@@ -13,22 +13,15 @@ public class PathingUtils {
     private static Direction bugDirection = null;
 
 
-//    public static boolean moveTowards(RobotController rc, MapLocation loc) throws GameActionException {
-//        MapLocation currLocation = rc.getLocation();
-//        Direction dirToLoc = currLocation.directionTo(loc);
-//        if(rc.canMove(dirToLoc)){
-//            rc.move(dirToLoc);
-//            return true;
-//        }
-//        else if(rc.canSenseRobotAtLocation(currLocation.add(dirToLoc)) && rc.senseRobotAtLocation(currLocation.add(dirToLoc)).getType() == RobotType.SOLDIER){
-//            Direction dir = RobotPlayer.directions[RobotPlayer.rng.nextInt(RobotPlayer.directions.length)];
-//            if(rc.canMove(dir)){
-//                rc.move(dir);
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
+    public static void moveDirectlyTowards(RobotController rc, MapLocation loc) throws GameActionException {
+        MapLocation currLocation = rc.getLocation();
+        Direction dirToLoc = currLocation.directionTo(loc);
+        for(Direction dir: MapLocationUtils.getBestDirections(dirToLoc)){
+            if(rc.canMove(dir)){
+                rc.move(dir);
+            }
+        }
+    }
 
     public static void smartExplore(RobotController rc, MapLocation startLocation) throws GameActionException{
         boolean hasMoved = false;

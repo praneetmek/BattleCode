@@ -1,8 +1,11 @@
 package firstiteration;
 
 import battlecode.common.GameActionException;
+import battlecode.common.MapLocation;
 import battlecode.common.RobotController;
 import battlecode.common.RobotType;
+
+import java.awt.*;
 
 class Communication {
     private static final int MIN_ENEMY_IDX = 21;
@@ -62,7 +65,34 @@ class Communication {
     static void unSignalDanger(RobotController rc) throws GameActionException {
         rc.writeSharedArray(PersonalConstants.INDEX_OF_DANGER,0);
     }
-    static int getDanger(RobotController rc) throws GameActionException {
-        return rc.readSharedArray(PersonalConstants.INDEX_OF_DANGER);
+    static MapLocation getDangerLocation(RobotController rc) throws GameActionException {
+        return MapLocationUtils.intToMapLocation(rc, rc.readSharedArray(PersonalConstants.INDEX_OF_DANGER));
+    }
+    static boolean isDanger(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(PersonalConstants.INDEX_OF_DANGER)>0;
+    }
+
+    static boolean isFrontLine(RobotController rc) throws GameActionException {
+        return rc.readSharedArray(PersonalConstants.INDEX_OF_FRONT_LINE) > 0;
+    }
+    static MapLocation getFrontLine(RobotController rc) throws GameActionException {
+        return MapLocationUtils.intToMapLocation(rc, rc.readSharedArray(PersonalConstants.INDEX_OF_FRONT_LINE));
+    }
+
+    static void setFrontLine(RobotController rc, MapLocation locOfFrontLine) throws GameActionException {
+        rc.writeSharedArray(PersonalConstants.INDEX_OF_FRONT_LINE, MapLocationUtils.mapLocationToInt(rc, locOfFrontLine));
+    }
+
+    static MapLocation getNearestArchonLocation(RobotController rc, MapLocation loc) throws GameActionException {
+        MapLocation bestLocation = MapLocationUtils.intToMapLocation(rc, rc.readSharedArray(PersonalConstants.INDEX_OF_ARCHON_LOCS));
+        int distance = bestLocation.distanceSquaredTo(loc);
+        for(int i = 0; i < rc.getArchonCount(); i++){
+            MapLocation archonLocation =  MapLocationUtils.intToMapLocation(rc, rc.readSharedArray(i + PersonalConstants.INDEX_OF_ARCHON_LOCS));
+            if(archonLocation.distanceSquaredTo(loc) < distance){
+                bestLocation = archonLocation;
+                distance = archonLocation.distanceSquaredTo(loc);
+            }
+        }
+        return bestLocation;
     }
 }

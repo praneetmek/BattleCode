@@ -5,7 +5,10 @@ import battlecode.common.*;
 public class ArchonStrategy {
 
     private static boolean inMoveForm = false;
+    private static int indexOfLocation = -1;
+    private static String s = "";
     public static void runArchon(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
+        s= "";
         Direction dir = RobotPlayer.directions[RobotPlayer.rng.nextInt(RobotPlayer.directions.length)];
 
         int numOfSoldiers = Communication.getAlive(rc, RobotType.SOLDIER);
@@ -16,32 +19,29 @@ public class ArchonStrategy {
 
         boolean canCreate = true;
 
+        updateArchonLocation(rc);
+        updateDangerStatus(rc, nearbyEnemies);
 
-
-        if(nearbyEnemies.length != 0){
-            Communication.signalDanger(rc);
-        }
-        else if(Communication.getDanger(rc) == MapLocationUtils.mapLocationToInt(rc, rc.getLocation())){
-            Communication.unSignalDanger(rc);
-        }
-
-        int dangerLocation = Communication.getDanger(rc);
-        if(dangerLocation > 0){
-            if(dangerLocation == MapLocationUtils.mapLocationToInt(rc, rc.getLocation())){
-                rc.setIndicatorString("Danger! Producing soldiers!");
-                for(Direction aDir: RobotPlayer.directions) {
+        if(Communication.isDanger(rc)){
+            MapLocation dangerLocation = Communication.getDangerLocation(rc);
+            s+="Danger at Archon at" + dangerLocation.toString();
+            if(dangerLocation.equals(rc.getLocation())){
+                s+= "Producing soldiers to protect";
+                MapLocation enemyLocation = nearbyEnemies[0].getLocation();
+                Direction directDirectionToEnemy = rc.getLocation().directionTo(enemyLocation);
+                for(Direction aDir: MapLocationUtils.getBestDirections(directDirectionToEnemy)) {
                     if (rc.canBuildRobot(RobotType.SOLDIER, aDir)) {
                         rc.buildRobot(RobotType.SOLDIER, aDir);
                     }
                 }
             }
             else{
-                rc.setIndicatorString("danger! production halted");
-                canCreate = false;
+                s+= "Production halted";
             }
+            canCreate = false;
+
         }
         //first try to heal
-        healNearbyRobots(rc, nearbyAllies);
 
         while(rc.senseRubble(rc.getLocation())>0){
             moveToBetterLocation(rc);
@@ -52,13 +52,14 @@ public class ArchonStrategy {
                 inMoveForm = false;
             }
         }
-        if(rc.readSharedArray(PersonalConstants.INDEX_OF_ARCHON)!=0 || nearbyEnemies.length!=0){
+        if((rc.readSharedArray(PersonalConstants.INDEX_OF_ARCHON)!=0 && numOfMiners > 10) || nearbyEnemies.length!=0){
             if (rc.canBuildRobot(RobotType.SOLDIER, dir)) {
                 rc.buildRobot(RobotType.SOLDIER, dir);
             }
         }
-        else if(canCreate){
-            if (numOfMiners<numOfSoldiers && numOfMiners < rc.getMapWidth() * rc.getMapHeight() * 0.01) {
+        healNearbyRobots(rc, nearbyAllies);
+        if(canCreate){
+            if (numOfMiners<2* numOfSoldiers && numOfMiners < rc.getMapWidth() * rc.getMapHeight() * 0.03) {
                 // Let's try to build a miner.
                 rc.setIndicatorString("Trying to build a miner");
                 if (rc.canBuildRobot(RobotType.MINER, dir)) {
@@ -71,7 +72,9 @@ public class ArchonStrategy {
                     rc.buildRobot(RobotType.SOLDIER, dir);
                 }
             }
+
         }
+        rc.setIndicatorString(s);
     }
 
     private static void healNearbyRobots(RobotController rc, RobotInfo[] nearbyAllies) throws GameActionException {
@@ -98,6 +101,31 @@ public class ArchonStrategy {
             PathingUtils.moveTowards(rc, locToMove);
             rc.transform();
             inMoveForm = false;
+        }
+    }
+
+    private static void updateDangerStatus(RobotController rc, RobotInfo[] nearbyEnemies) throws GameActionException {
+        if(nearbyEnemies.length != 0){
+            Communication.signalDanger(rc);
+        }
+        else if(Communication.getDangerLocation(rc).equals(rc.getLocation())){
+            Communication.unSignalDanger(rc);
+        }
+    }
+
+    private static void updateArchonLocation(RobotController rc) throws GameActionException {
+        if(indexOfLocation != -1){
+            rc.writeSharedArray(indexOfLocation+PersonalConstants.INDEX_OF_ARCHON_LOCS, MapLocationUtils.mapLocationToInt(rc,rc.getLocation()));
+        }
+        else{
+            for(int i=0; i<GameConstants.MAX_STARTING_ARCHONS; i++){
+                int currentItem = rc.readSharedArray(i+PersonalConstants.INDEX_OF_ARCHON_LOCS);
+                if(rc.readSharedArray(i+PersonalConstants.INDEX_OF_ARCHON_LOCS) == 0){
+                    rc.writeSharedArray(i+PersonalConstants.INDEX_OF_ARCHON_LOCS, MapLocationUtils.mapLocationToInt(rc,rc.getLocation()));
+                    indexOfLocation = i;
+                    break;
+                }
+            }
         }
     }
 }
